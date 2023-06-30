@@ -1,0 +1,11 @@
+D:\CSP\KiKuSuiPowerSet\bin\Debug\KiKuSuiPowerSet.exe.config
+D:\CSP\KiKuSuiPowerSet\bin\Debug\KiKuSuiPowerSet.exe
+D:\CSP\KiKuSuiPowerSet\bin\Debug\KiKuSuiPowerSet.pdb
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.csproj.AssemblyReference.cache
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.csproj.SuggestedBindingRedirects.cache
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.Form1.resources
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.Properties.Resources.resources
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.csproj.GenerateResource.cache
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.csproj.CoreCompileInputs.cache
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.exe
+D:\CSP\KiKuSuiPowerSet\obj\Debug\KiKuSuiPowerSet.pdb
