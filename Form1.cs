@@ -18,109 +18,95 @@ namespace KiKuSuiPowerSet
         public Form1()
         {
             InitializeComponent();
-            textBox1.Text = string.Empty;
         }
 
-        string serverIP = "192.168.1.127";
-        int serverPort = 5024;
-        TcpClient client;
-        NetworkStream networkStream;
+        TcpClient KiKuSuiTcpClient = null;
+        NetworkStream KiKuSuiNetStream;
+        private string KiKuSuiWebServerAddress = "192.168.1.127";
+        private int KiKuSuiWebServerPort = 5024;
 
-        string LAST_VALUE = string.Empty;
+        private string HistoryCmdValue = string.Empty;
+        private float PowerMaxOutLimitValue;
+        private float PowerCurrentSetValue;
+
+        /**
+         *  CMD List
+         */
+        private const string VOLT_RANGE = "VOLT:RANG 322\n";
+        private const string OUTP_CLOSE = "OUTP OFF\n";
+        private const string OUTP_START = "OUTP ON\n";
+        private const string VOLT_DC_SET = "VOLT:OFFS ";
 
 
+        private string SetVoltSendValue(string value)
+        {
+            return VOLT_DC_SET + value + "\n";
+        }
+        private bool SendSCPICommand(string cmd)
+        {
+            string message = cmd + "\n";
+            byte[] data = Encoding.ASCII.GetBytes(message);
+            KiKuSuiNetStream.Write(data, 0, data.Length);
+            Thread.Sleep(300);
+            return true;
+        }
         private void button1_Click(object sender, EventArgs e)
         {
-
-            if (button1.Text.Contains("连接"))
+            if (ConnHandle.Text.Contains("连接"))
             {
-                button1.Text = "断开设备";
-                richTextBox1.Clear();
-                client = new TcpClient();
-                client.Connect(serverIP, serverPort);
+                ConnHandle.Text = "断开设备";
+                LogTextBox.Clear();
 
-                networkStream = client.GetStream();
-                string message = "VOLT:RANG 322\n";
-                byte[] data = Encoding.ASCII.GetBytes(message);
-                // 发送消息到服务器
-                networkStream.Write(data, 0, data.Length);
+                KiKuSuiTcpClient = new TcpClient();
+                KiKuSuiTcpClient.Connect(KiKuSuiWebServerAddress, KiKuSuiWebServerPort);
+                KiKuSuiNetStream = KiKuSuiTcpClient.GetStream();
 
-                byte[] buffer = new byte[256];
-                int bytesRead = networkStream.Read(buffer, 0, buffer.Length);
-                string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                response =  response.Replace("SCPI>", "SCPI> OK");
-                richTextBox1.Text = richTextBox1.Text + response;
+                // Set Volt Range
+                SendSCPICommand(VOLT_RANGE);
+                LogTextBox.Text = LogTextBox.Text + "电源输出能力: 0-450V\n";
+
+                // Set close output
+                SendSCPICommand(OUTP_CLOSE);
+                LogTextBox.Text = LogTextBox.Text + "电源输出关闭\n";
+
+                // Set Volt 0
+                SendSCPICommand(SetVoltSendValue("0"));
+                LogTextBox.Text = LogTextBox.Text + "电源输出设置：0V\n";
+                // Wait 0.3s
                 Thread.Sleep(300);
 
-                message = "OUTP OFF\n";
-                data = Encoding.ASCII.GetBytes(message);
-                // 发送消息到服务器
-                networkStream.Write(data, 0, data.Length);
-                Thread.Sleep(300);
+                // Set close output
+                SendSCPICommand(OUTP_START);
+                LogTextBox.Text = LogTextBox.Text + "电源输出开启\n";
 
-                message = "VOLT:OFFS 0\n";
-                data = Encoding.ASCII.GetBytes(message);
-                // 发送消息到服务器
-                networkStream.Write(data, 0, data.Length);
-                //buffer = new byte[256];
-                //bytesRead = networkStream.Read(buffer, 0, buffer.Length);
-                //response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                //richTextBox1.Text = richTextBox1.Text + response;
-                Thread.Sleep(500);
-
-                message = "OUTP ON\n";
-                data = Encoding.ASCII.GetBytes(message);
-                // 发送消息到服务器
-                networkStream.Write(data, 0, data.Length);
-
-                //buffer = new byte[256];
-                //bytesRead = networkStream.Read(buffer, 0, buffer.Length);
-                //response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                //richTextBox1.Text = richTextBox1.Text + response;
-                richTextBox1.Text = richTextBox1.Text + "\n电源已连接\n";
+                LogTextBox.Text = LogTextBox.Text + "电源连接成功\n";
             }
-            else if (button1.Text.Contains("断开"))
+            else if (ConnHandle.Text.Contains("断开"))
             {
-                button1.Text = "连接设备";
-                string message = "OUTP OFF\n";
-                byte[] data = Encoding.ASCII.GetBytes(message);
-                // 发送消息到服务器
-                networkStream.Write(data, 0, data.Length);
-                Thread.Sleep(300);
-                byte[] buffer = new byte[256];
-                int bytesRead = networkStream.Read(buffer, 0, buffer.Length);
-                string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                response = response.Replace("SCPI>", "SCPI> OK");
-                richTextBox1.Text = richTextBox1.Text + response;
-                Thread.Sleep(300);
-                client.Close();
-                richTextBox1.Text = richTextBox1.Text + "\n电源已断开\n";
+                ConnHandle.Text = "连接设备";
+                // Set close output
+                SendSCPICommand(OUTP_CLOSE);
+                LogTextBox.Text = LogTextBox.Text + "电源输出关闭\n";
+                KiKuSuiTcpClient.Close();
+                LogTextBox.Text = LogTextBox.Text + "\n电源已断开\n";
             }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             label1.Text = "通信协议：SCPI协议  IP地址: 192.168.1.127  端口: 5024";
-            textBox2.Text = "24";
+            MaxOutTextBox.Text = "24";
+            PowerSetTextBox.Text = string.Empty;
         }
 
-
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-
-
-        }
-
-        float maxOut;
-        float value;
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
 
-            if (float.TryParse(textBox2.Text, out maxOut))
+            if (float.TryParse(MaxOutTextBox.Text, out PowerMaxOutLimitValue))
             {
-                if (maxOut > 450.0)
+                if (PowerMaxOutLimitValue > 450.0)
                 {
-                    maxOut = (float)450.0;
+                    PowerMaxOutLimitValue = (float)450.0;
                 }
             }
             else
@@ -128,44 +114,63 @@ namespace KiKuSuiPowerSet
                 MessageBox.Show("设置输出限值错误, 是不是有效数字");
                 return;
             }
-            textBox1.Text = textBox1.Text.Replace("。", ".");
-            if (float.TryParse(textBox1.Text, out value))
+            PowerSetTextBox.Text = PowerSetTextBox.Text.Replace("。", ".");
+            if (float.TryParse(PowerSetTextBox.Text, out PowerCurrentSetValue))
             {
-                if (button1.Text.Contains("连接"))
+                if (ConnHandle.Text.Contains("连接"))
                 {
-                    MessageBox.Show("请先连接设备!!!");
-                    textBox1.Text = string.Empty;
+                    MessageBox.Show("请先连接设备.");
+                    PowerSetTextBox.Text = string.Empty;
                     return;
                 }
 
-                if (value > maxOut)
+                if (PowerCurrentSetValue > PowerMaxOutLimitValue)
                 {
-                    MessageBox.Show("输入超限制，最大输出：" + maxOut.ToString());
+                    MessageBox.Show("输入超限制，最大输出：" + PowerMaxOutLimitValue.ToString());
                     //return;//
-                    textBox1.Text = maxOut.ToString();
+                    PowerSetTextBox.Text = PowerMaxOutLimitValue.ToString();
                 }
 
-                if (LAST_VALUE != textBox1.Text)
+                if (HistoryCmdValue != PowerSetTextBox.Text)
                 {
-                    LAST_VALUE = textBox1.Text;
-                    richTextBox1.Text = richTextBox1.Text + "\n设置电压:" + value.ToString() + "V";
-                    string message = "VOLT:OFFS " + textBox1.Text + "\n";
-                    byte[] data = Encoding.ASCII.GetBytes(message);
-                    // 发送消息到服务器
-                    networkStream.Write(data, 0, data.Length);
-
-                    byte[] buffer = new byte[256];
-                    int bytesRead = networkStream.Read(buffer, 0, buffer.Length);
-                    string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                    response = response.Replace("SCPI>", "SCPI> OK");
-                    richTextBox1.Text = richTextBox1.Text + response;
+                    HistoryCmdValue = PowerSetTextBox.Text;
+                    SendSCPICommand(SetVoltSendValue(PowerCurrentSetValue.ToString()));
+                    LogTextBox.Text = LogTextBox.Text + "电源输出设置：" + PowerCurrentSetValue.ToString() + "V";
                 }
             }
-
-            richTextBox1.SelectionStart = richTextBox1.Text.Length;
-            richTextBox1.ScrollToCaret();
+            // 
+            LogTextBox.SelectionStart = LogTextBox.Text.Length;
+            LogTextBox.ScrollToCaret();
+        }
+        private void button2_Click(object sender, EventArgs e)
+        {
+            LogTextBox.Text = string.Empty;
+            string helpInfo = "1. 网线连接电源后LAN口\r\n\r\n2. 网线另一端连接电脑网口\r\n\r\n3. 设置电脑IPv4地址:192.168.1.123\r\n\r\n4. 子网掩码:255.255.255.0\r\n\r\n5. 点击连接设备\r\n\r\n6. 设置输出电压";
+            LogTextBox.Text = helpInfo;
         }
 
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            if (float.TryParse(MaxOutTextBox.Text, out PowerMaxOutLimitValue))
+            {
+                if (PowerMaxOutLimitValue > 450.0)
+                {
+                    PowerMaxOutLimitValue = (float)450.0;
+                    return;
+                }
+
+                if (PowerCurrentSetValue > PowerMaxOutLimitValue)
+                {
+                    PowerSetTextBox.Text = "0.0";
+                    if (ConnHandle.Text.Contains("断开"))
+                    {
+                        // Set Volt 0
+                        SendSCPICommand(SetVoltSendValue("0"));
+                        LogTextBox.Text = LogTextBox.Text + "电源输出设置：0V\n";
+                    }
+                }
+            }
+        }
         private void textBox1_KeyDown(object sender, KeyEventArgs e)
         {
             if ((int)e.KeyCode == 13)
@@ -179,45 +184,6 @@ namespace KiKuSuiPowerSet
             if ((int)e.KeyCode == 13)
             {
                 e.SuppressKeyPress = true;
-            }
-        }
-
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            richTextBox1.Text = string.Empty;
-            string helpInfo = "1. 网线连接电源后LAN口\r\n\r\n2. 网线另一端连接电脑网口\r\n\r\n3. 设置电脑IPv4地址:192.168.1.123\r\n\r\n4. 子网掩码:255.255.255.0\r\n\r\n5. 点击连接设备\r\n\r\n6. 设置输出电压";
-            richTextBox1.Text = helpInfo;
-        }
-
-        private void textBox2_TextChanged(object sender, EventArgs e)
-        {
-            if (float.TryParse(textBox2.Text, out maxOut))
-            {
-                if (maxOut > 450.0)
-                {
-                    maxOut = (float)450.0;
-                    return;
-                }
-
-                if (value > maxOut)
-                {
-                    textBox1.Text = "0.0";
-
-                    if (button1.Text.Contains("断开"))
-                    {
-                        string message = "VOLT:OFFS 0\n";
-                        byte[] data = Encoding.ASCII.GetBytes(message);
-                        // 发送消息到服务器
-                        networkStream.Write(data, 0, data.Length);
-
-                        byte[] buffer = new byte[256];
-                        int bytesRead = networkStream.Read(buffer, 0, buffer.Length);
-                        string response = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                        response = response.Replace("SCPI>", "SCPI> OK");
-                        richTextBox1.Text = richTextBox1.Text + response;
-                    }
-                }
             }
         }
     }
